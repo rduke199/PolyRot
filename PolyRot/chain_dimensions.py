@@ -14,27 +14,27 @@ from scipy.spatial.transform import Rotation
 
 class PolymerRotate:
     def __init__(self,
-                 bond_lengths: list,
                  ring_lengths: list,
+                 bond_lengths: list,
                  deflection_angles: list,
                  dihed_energies: list,
                  theta_degrees=True
                  ):
         """
-        :param bond_lengths: list, list of length of the inter-moiety bond
-        :param ring_lengths: list, list of length of the ring tangent
+        :param ring_lengths: list, list of length of the inter-moiety bond
+        :param bond_lengths: list, list of length of the ring tangent
         :deflection_angles: list, list of deflection angle between ring tangent and inter-moiety bond in radians
         :dihed_energies: set or list, list of tuples. Each tuple should contain (angle, energy).
         :param theta_degrees: bool, reads theta as degrees if True, radians if False
         """
 
-        if not len(bond_lengths) == len(ring_lengths) == len(dihed_energies) == (len(deflection_angles) / 2):
+        if not len(ring_lengths) == len(bond_lengths) == len(dihed_energies) == (len(deflection_angles) / 2):
             raise ValueError(
                 "Error. bond_lengths and ring_lengths should be the same length, and deflection_angles should be twice as long. len(bond_lengths)={}, len(ring_lengths={}, dihed_energies={}, and len(deflection_angles)={}".format(
-                    len(bond_lengths), len(ring_lengths), len(dihed_energies), len(deflection_angles)))
+                    len(ring_lengths), len(bond_lengths), len(dihed_energies), len(deflection_angles)))
 
-        self.bond_lengths = bond_lengths
-        self.ring_lengths = ring_lengths
+        self.bond_lengths = ring_lengths
+        self.ring_lengths = bond_lengths
         self.deflection_angles = np.radians(deflection_angles) if theta_degrees else deflection_angles
         self.dihed_energies = dihed_energies
         self.theta_degrees = theta_degrees
@@ -282,7 +282,7 @@ if __name__ == "__main__":
     LCC = 1.480  # length of the inter-moiety bond
     DEFLECTION = 15  # degrees
 
-    polymer = PolymerRotate(bond_lengths=[LCSC, LCSC], ring_lengths=[LCC, LCC],
+    polymer = PolymerRotate(ring_lengths=[LCSC, LCSC], bond_lengths=[LCC, LCC],
                             deflection_angles=[DEFLECTION, -DEFLECTION, -DEFLECTION, DEFLECTION],
                             dihed_energies=[DIHED_ROT, DIHED_ROT])
     ch = polymer.std_chain(50)

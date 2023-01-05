@@ -46,6 +46,7 @@ rdkit==2022.9.1
 ruamel.yaml==0.17.21
 ruamel.yaml.clib==0.2.7
 seaborn==0.12.1
+setuptools==65.6.3
 scipy==1.8
 six==1.16.0
 spglib==2.0.2
