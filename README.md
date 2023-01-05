@@ -20,7 +20,7 @@ pip install git+https://github.com/rduke199/PolyRot.git
 
 The first step in using this tool is collecting the necessary data. Consider the following polymer: 
 
-![](media/polymer_ex1.png1.png)
+![](media/polymer_ex1.png)
 
 The PolymerRotate class requires four types of data, each one a list: 
 1. List of ring lengths (`float`)
