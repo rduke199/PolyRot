@@ -5,6 +5,7 @@ from pymatgen.io.gaussian import GaussianInput
 
 from rdkit.Chem.rdmolops import AddHs
 from rdkit.Chem import MolFromSmiles, AllChem
+from rdkit.Chem.rdMolTransforms import SetDihedralDeg
 
 
 def get_central_dihed(rdk_mol):
@@ -53,13 +54,16 @@ def get_central_dihed(rdk_mol):
 def rotated_gaus_input(smiles, dihed_degree, paramset, out_file=None):
     rdkmol = MolFromSmiles(smiles)
     rdkmol_hs = AddHs(rdkmol)
-    init_structure = AllChem.rdmolfiles.MolToXYZBlock(rdkmol_hs)
-    mol = Molecule.from_str(init_structure, 'xyz')
 
     # Get dihedral angle atoms to be rotated and frozen
-    dihed_idxs = [i + 1 for i in get_central_dihed(rdkmol)[0]]
+    dihed_idxs = [i + 1 for i in get_central_dihed(rdkmol_hs)[0]]
+
+    # Set dihedral angle
+    rotated_mol = SetDihedralDeg(rdkmol_hs.GetConformer(), dihed_idxs[0], dihed_idxs[1], dihed_idxs[2], dihed_idxs[3], dihed_degree)
 
     # generate the input for gaussian energy run
+    structure = AllChem.rdmolfiles.MolToXYZBlock(rotated_mol)
+    mol = Molecule.from_str(structure, 'xyz')
     paramset.route_parameters.update(
         {"opt": "modredundant", 'SCF': '(MaxCycle=512)', 'Int': '(Grid=SuperFine)'})
     gauss_inp = generate_gaussian_input(paramset=paramset, mol=mol)

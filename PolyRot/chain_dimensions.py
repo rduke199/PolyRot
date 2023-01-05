@@ -42,7 +42,7 @@ class PolymerRotate:
     def std_chain(self, n):
         """
         Build a standard polymer chain from sequence of tangent vectors
-        :param n: int, number of repeat units
+        :param n: int, number of rings
 
         :return  list of [x,y,z] points for the chain
         """
