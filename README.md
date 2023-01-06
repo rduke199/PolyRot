@@ -104,12 +104,14 @@ following polymer:
 The measurements for this polymer are as follows.
 
 ```python
-DIHED_A = {(180, 0.551967), (170, 0.557568), (160, 0.57842), (150, 0.743988),
+# Dihedral energy surface between thiophene and benzothiadiazole
+DIHED_TB = {(180, 0.551967), (170, 0.557568), (160, 0.57842), (150, 0.743988),
            (140, 1.15127), (130, 1.76722), (120, 2.48711), (110, 3.17616), (100, 3.6976),
            (90, 3.93171), (80, 3.8368), (70, 3.38603), (60, 2.66725), (50, 1.79179),
            (40, 0.954215), (30, 0.334189), (20, 0.0295074), (10, 0), (0, 0.00945115)}
 
-DIHED_B = {(180, 0.496007), (170, 0.338429), (160, 0.0933325), (150, 0),
+# Dihedral energy surface between fluorene and thiophene
+DIHED_FT = {(180, 0.496007), (170, 0.338429), (160, 0.0933325), (150, 0),
            (140, 0.17495), (130, 0.647714), (120, 1.29963), (110, 1.9583), (100, 2.45073),
            (90, 2.6726), (80, 2.55251), (70, 2.1469), (60, 1.56547), (50, 0.979727),
            (40, 0.572042), (30, 0.409372), (20, 0.469453), (10, 0.615015), (0, 0.652945)};
@@ -137,7 +139,7 @@ polymer = PolymerRotate(
     bond_lengths=[LB_FT, LB_TB, LB_TB, LB_FT],
     deflection_angles=[ DEF_ANGLE_T,  DEF_ANGLE_F, DEF_ANGLE_F, -DEF_ANGLE_T, 
                        -DEF_ANGLE_T, -DEF_ANGLE_B,-DEF_ANGLE_B,  DEF_ANGLE_T],
-    dihed_energies=[DIHED_B, DIHED_B, DIHED_A, DIHED_A]
+    dihed_energies=[DIHED_FT, DIHED_TB, DIHED_TB, DIHED_FT]
 )
 ```
 
