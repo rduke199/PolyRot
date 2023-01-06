@@ -34,7 +34,7 @@ DIHED_ROT = [(0, 0), (10, 0.293835), (20, 0.967939), (30, 1.86645),
                  (90, 11.4081), (100, 11.2003), (110, 10.0682), (120, 8.36782), (130, 6.51926),
                  (140, 5.079767), (150, 4.36963), (160, 4.04486), (170, 3.80474), (180, 3.82803)]
 L_RING = 2.548  # length of the ring tangent
-LR_BOND = 1.480  # length of the inter-moiety bond
+L_BOND = 1.480  # length of the inter-moiety bond
 DEFLECTION = 15  # degrees
 ```
 
@@ -44,7 +44,7 @@ With the specified data, the user can define a polymer object.
 ```python
 from PolyRot.chain_dimensions import PolymerRotate
 
-polymer = PolymerRotate(ring_lengths=[L_RING, L_RING], bond_lengths=[LR_BOND, LR_BOND],
+polymer = PolymerRotate(ring_lengths=[L_RING, L_RING], bond_lengths=[L_BOND, L_BOND],
                         deflection_angles=[DEFLECTION, -DEFLECTION, -DEFLECTION, DEFLECTION],
                         dihed_energies=[DIHED_ROT, DIHED_ROT])
 ```
