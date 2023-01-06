@@ -1,5 +1,6 @@
 .eggs
 .idea
+.empty
 **__pycache__
 env_poly_rot/
 PolyRot.egg-info/
