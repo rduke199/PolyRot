@@ -44,8 +44,10 @@ With the specified data, the user can define a polymer object.
 ```python
 from PolyRot.chain_dimensions import PolymerRotate
 
-polymer = PolymerRotate(ring_lengths=[L_RING, L_RING], bond_lengths=[L_BOND, L_BOND],
-                        deflection_angles=[DEFLECTION, -DEFLECTION, -DEFLECTION, DEFLECTION],
+polymer = PolymerRotate(ring_lengths=[L_RING, L_RING], 
+                        bond_lengths=[L_BOND, L_BOND],
+                        deflection_angles=[  DEFLECTION, -DEFLECTION, 
+                                            -DEFLECTION,  DEFLECTION],
                         dihed_energies=[DIHED_ROT, DIHED_ROT])
 ```
 
