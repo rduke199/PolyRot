@@ -83,7 +83,7 @@ distance of a ring from the first ring.
 We can view results of tangent-tangent correlation function by specifying `plot=Ture`. 
 The slope of the tangent-tangent correlation vs distance estimates the persistence length (N<sub>p</sub>). 
 ```python
-from PolyRot.chain_dimensions import n_p
+from PolyRot.chain_dimensions import n_p, avg_r_2
 
 Np = n_p(polymers_many, plot=True)
 print("Np: ", Np)
@@ -91,8 +91,6 @@ print("Np: ", Np)
 
 Finally we can estimate the mean square end-to-end distance (R<sup>2</sup>) for our polymer as shown below. 
 ```python
-from PolyRot.chain_dimensions import avg_r_2
-
 r_2 = avg_r_2(polymers_many, in_nm_2=True)
 print("R^2: ", r_2)
 ```
