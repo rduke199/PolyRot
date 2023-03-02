@@ -144,6 +144,31 @@ polymer = PolymerRotate(
 ```
 
 
+## Default Measurements
+
+Although it is recommended that users find exact chemical measurements via calculations or
+literature review, users can find estimated measurements via the `default_measuements` module. 
+For example, one might find the `PolymerRotate` parameters for example 1 as follows: 
+
+```python
+from PolyRot.default_measurements import *
+
+L_RING = ring_length(ring_size=5) # length of the ring tangent
+# >>> 2.4  
+L_BOND = bond_length(atom1="C", atom2="C", bond_order=1.5) # length of the inter-moiety bond
+# >>> 1.4
+DEFLECTION = deflection_angle(ring_size=5) # degrees
+# >>> 18
+```
+
+Recall that the true values are as shown below, so the `default_measuements` module provides 
+only a rough estimate. 
+```python
+L_RING = 2.548  # length of the ring tangent
+L_BOND = 1.480  # length of the inter-moiety bond
+DEFLECTION = 15  # degrees
+```
+
 ## Central Dihedral 
 *In development*
 
