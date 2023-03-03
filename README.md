@@ -23,10 +23,10 @@ The first step in using this tool is collecting the necessary data. Consider the
 ![](media/polymer1.png)
 
 The PolymerRotate class requires four types of data, each one a list: 
-1. List of ring lengths (`float`)
-2. List of bond lengths (`float`)
-3. List of deflection angles lengths (`float`), in degrees if `theta_degrees` is True (default)
-4. List of dihedral angles' potential energy surfaces (`list` of `tuples` where each tuple has the format 
+1. List of ring lengths (`float`) in one monomer unit
+2. List of bond lengths (`float`) in one monomer unit
+3. List of deflection angles lengths (`float`) in one monomer unit, in degrees if `theta_degrees` is True (default)
+4. List of dihedral angles' potential energy surfaces in one monomer unit (`list` of `tuples` where each tuple has the format 
 (`degree`, `energy`)), in degrees if `theta_degrees` is True (default)
 ```python
 DIHED_ROT = [(0, 0), (10, 0.293835), (20, 0.967939), (30, 1.86645),
@@ -39,47 +39,50 @@ DEFLECTION = 15  # degrees
 ```
 
 
-With the specified data, the user can define a polymer object.
+With the specified data, the user can define a polymer object. Note that the temperature (in Kelvin)
+should also be specified in order to perform the Boltzmann probability analyzes. 
 
 ```python
 from PolyRot.chain_dimensions import PolymerRotate
 
-polymer = PolymerRotate(ring_lengths=[L_RING, L_RING], 
-                        bond_lengths=[L_BOND, L_BOND],
-                        deflection_angles=[  DEFLECTION, -DEFLECTION, 
-                                            -DEFLECTION,  DEFLECTION],
-                        dihed_energies=[DIHED_ROT, DIHED_ROT])
+polymer = PolymerRotate(ring_lengths=[L_RING,], 
+                        bond_lengths=[L_BOND],
+                        deflection_angles=[ DEFLECTION,  DEFLECTION],
+                        dihed_energies=[DIHED_ROT], 
+                        temp=700)
 ```
 
 One a polymer object has been defined, the rest becomes very straightforward. Here we generate a polymer with 
-50 rings. The `std_chain` function always builds a polymer with alternating angles. We then use the `draw_chain` 
+25 monomer units. The `std_chain` function always builds a polymer with trans monomer units. We then use the `draw_chain` 
 function to draw the resulting chain in two dimensions.  
 ```python
 from PolyRot.chain_dimensions import draw_chain
 
-ch = polymer.std_chain(50)
+ch = polymer.std_chain(25)
 draw_chain(ch, dim3=False)
 ```
 
 Next we can randomly rotate the dihedral angles for the polymer. Each angle is rotated randomly, but weighted
-according to the potential energy surface given when defining the polymer. 
+according to the Boltzmann probability distribution for the dihedral angle derived from the potential 
+energy surfaces given when defining the polymer. 
 We also plot the rotated polymer, in three dimensions this time. 
 ```python
-new_ch = polymer.rotated_chain(50)
+new_ch = polymer.rotated_chain(25)
 draw_chain(new_ch, dim3=True)
 ```
 
 ### Analysis: predicting chain dimensions 
 
 To estimate the chain dimensions for our polymer, we first generate 10,000 iterations of the randomly rotated
-polymer 
+polymer. 
 ```python
-polymers_many = multi_polymer(polymer, n=50, num_poly=100)
+polymers_many = multi_polymer(polymer, n_units=25, num_poly=10000)
 ```
 
-Next, we find the tangent-tangent correlation of the first ring with each subsequent ring. For a polymer
+Next, we find the tangent-tangent correlation of the first monomer unit with each subsequent unit. For a polymer
 chain with any stiffness, the tangent-tangent correlation should be correlated (often linearly) with the 
-distance of a ring from the first ring. 
+distance of a ring from the first ring. Be sure to specify the `poly_obj` argument as the original 
+generated polymer object; otherwise, the function will assume that each new ring is a new monomer unit. 
 We can view results of tangent-tangent correlation function by specifying `plot=Ture`. 
 The slope of the tangent-tangent correlation vs distance estimates the persistence length 
 (N<sub>p</sub>). Finally we can estimate the mean square end-to-end distance (R<sup>2</sup>) 
@@ -87,7 +90,7 @@ for our polymer as shown below.
 ```python
 from PolyRot.chain_dimensions import n_p, avg_r_2
 
-n_p_value = n_p(polymers_many, plot=True)
+n_p_value = n_p(polymers_many, poly_obj=polymer, plot=True)
 
 r_2_value = avg_r_2(polymers_many, in_nm_2=True)
 ```
@@ -131,13 +134,12 @@ Given this information, the polymer object would be defined as defined below.
 ```python
 from PolyRot.chain_dimensions import PolymerRotate
 
-polymer = PolymerRotate(
-    ring_lengths=[LR_F, LR_T, LR_B, LR_T],
-    bond_lengths=[LB_FT, LB_TB, LB_TB, LB_FT],
-    deflection_angles=[ DEF_ANGLE_T,  DEF_ANGLE_F, DEF_ANGLE_F, -DEF_ANGLE_T, 
-                       -DEF_ANGLE_T, -DEF_ANGLE_B,-DEF_ANGLE_B,  DEF_ANGLE_T],
-    dihed_energies=[DIHED_FT, DIHED_TB, DIHED_TB, DIHED_FT]
-)
+polymer = PolymerRotate(bond_lengths=[LB_FT, LB_FT, LB_TB, LB_TB], 
+                        ring_lengths=[LR_F, LR_T, LR_B, LR_T], 
+                        deflection_angles=[DEF_ANGLE_F, DEF_ANGLE_F, -DEF_ANGLE_T, -DEF_ANGLE_T, 
+                                           DEF_ANGLE_B, DEF_ANGLE_B, -DEF_ANGLE_T, -DEF_ANGLE_T], 
+                        dihed_energies=[DIHED_FT, DIHED_FT, DIHED_TB, DIHED_TB], 
+                        temp=700)
 ```
 
 

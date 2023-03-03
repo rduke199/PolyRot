@@ -1,4 +1,3 @@
-import math
 import random
 import warnings
 import itertools
@@ -18,7 +17,8 @@ class PolymerRotate:
                  bond_lengths: list,
                  deflection_angles: list,
                  dihed_energies: list,
-                 theta_degrees=True
+                 theta_degrees=True,
+                 temp=298
                  ):
         """
         :param ring_lengths: list, list of length of the inter-moiety bond
@@ -26,6 +26,7 @@ class PolymerRotate:
         :deflection_angles: list, list of deflection angle between ring tangent and inter-moiety bond in radians
         :dihed_energies: set or list, list of tuples. Each tuple should contain (angle, energy).
         :param theta_degrees: bool, reads theta as degrees if True, radians if False
+        :param temp: float, temperature in K (for Boltzman distribution)
         """
 
         if not len(ring_lengths) == len(bond_lengths) == len(dihed_energies) == (len(deflection_angles) / 2):
@@ -33,29 +34,32 @@ class PolymerRotate:
                 "Error. bond_lengths and ring_lengths should be the same length, and deflection_angles should be twice as long. len(bond_lengths)={}, len(ring_lengths={}, dihed_energies={}, and len(deflection_angles)={}".format(
                     len(ring_lengths), len(bond_lengths), len(dihed_energies), len(deflection_angles)))
 
-        self.bond_lengths = ring_lengths
-        self.ring_lengths = bond_lengths
+        self.bond_lengths = bond_lengths
+        self.ring_lengths = ring_lengths
         self.deflection_angles = np.radians(deflection_angles) if theta_degrees else deflection_angles
         self.dihed_energies = dihed_energies
         self.theta_degrees = theta_degrees
+        self.temp = temp
 
-    def std_chain(self, n):
+        self.points_per_unit = 2 * len(self.ring_lengths)
+
+    def std_chain(self, n_units):
         """
         Build a standard polymer chain from sequence of tangent vectors
-        :param n: int, number of rings
+        :param n_units: int, number of units
 
         :return  list of [x,y,z] points for the chain
         """
-        length_list = list(itertools.chain(*list(zip(self.bond_lengths, self.ring_lengths))))
-        xyz_points = [[0, 0, 0]]
-        for i in range(0, n + 1):
-            l_idx = i % len(self.deflection_angles)
-            length, deflection_angle = length_list[l_idx], self.deflection_angles[l_idx]
+        n = self.points_per_unit * n_units
+        length_list = list(itertools.chain(*list(zip(self.bond_lengths * 2, self.ring_lengths * 2))))
+        length_list = length_list[-1:] + length_list[:-1]
+        deflection_angles = list(self.deflection_angles) + list(np.negative(self.deflection_angles))
+        deflection_angles = deflection_angles[-2:] + deflection_angles[:-2]
+        xyz_points = [[0, 0, -length_list[0]], [0, 0, 0]]
+        for i in range(1, n + 1):
+            l_idx = i % len(deflection_angles)
+            length, deflection_angle = length_list[l_idx], deflection_angles[l_idx]
 
-            if i == 0:
-                xyz_points.append(
-                    tuple([length * x for x in [math.sin(deflection_angle), 0, math.cos(deflection_angle)]]))
-                continue
             previous_v = np.subtract(xyz_points[i], xyz_points[i - 1])
             previous_unit_v = previous_v / np.linalg.norm(previous_v)
             bond_pt = self.rotate((xyz_points[i] + length * previous_unit_v), xyz_points[i], deflection_angle,
@@ -63,12 +67,12 @@ class PolymerRotate:
 
             xyz_points.append(tuple(np.round_(bond_pt, decimals=3)))
 
-        return xyz_points[:-1]
+        return xyz_points[1:]
 
-    def rotated_chain(self, n, return_angles=False):
+    def rotated_chain(self, n_units, return_angles=False):
         """
         Build a randomly rotated polymer chain from sequence of tangent vector
-        :param n: int, number of repeat units
+        :param n_units: int, number of rings
         :param return_angles: bool, return tuple with list of points then the random angle if True
 
         :return  list of [x,y,z] points for the chain
@@ -80,7 +84,7 @@ class PolymerRotate:
                                       kind='cubic')
             cum_angle_funcs.append(cum_angle_func)
 
-        chain = self.std_chain(n)
+        chain = self.std_chain(n_units)
         if return_angles:
             new_chain, dihed_angles = self.random_rotate(chain, cum_angle_funcs, return_angles=return_angles)
             return new_chain, dihed_angles
@@ -105,7 +109,7 @@ class PolymerRotate:
                 new_row['angle'] = 360 - new_row['angle']
                 dihed_df = dihed_df.append(new_row, ignore_index=True)
         dihed_df.sort_values(by="angle", inplace=True)
-        dihed_df['boltzman'] = dihed_df.apply(lambda x: self.boltzman_dist(x.energy, T=700), axis=1)
+        dihed_df['boltzman'] = dihed_df.apply(lambda x: self.boltzman_dist(x.energy, T=self.temp), axis=1)
         dihed_df['probability'] = dihed_df.apply(lambda x: x.boltzman / dihed_df.boltzman.sum(), axis=1)
         dihed_df['cum_probability'] = dihed_df.probability.cumsum()
         return dihed_df
@@ -191,48 +195,50 @@ class PolymerRotate:
 # ---------------------- Analysis ----------------------
 
 @jit(target_backend='cuda')
-def multi_polymer(poly_obj, n, num_poly):
+def multi_polymer(poly_obj, n_units, num_poly):
     """
     Generate list of rotated polymers
     :param poly_obj: obj, RotatePolymer object for rotation
-    :param n: int, number of polymer units
+    :param n_units: int, number of polymer units
     :param num_poly: int, number of polymers to create
 
     :return: list of rotated polymers
     """
     all_poly = list(np.zeros(num_poly))
     for i in tqdm(range(num_poly)):
-        all_poly[i] = poly_obj.rotated_chain(n)
+        all_poly[i] = poly_obj.rotated_chain(n_units)
     return all_poly
 
 
-def cos_vals(pts):
+def cos_vals(pts, points_per_unit=2):
     """
     Compute the tangent correlation between ith inter-moiety vector and the 1st inter-moiety vector
 
     :param pts: list, list of [x,y,z] points for the chain
+    :param points_per_unit: int, points per polymer_unit
 
     :return: list of [x,y,z] points for the updated chain
 
     """
     final_corr = []
     second_third = np.subtract(pts[2], pts[1])
-    for i in range(2, len(pts), 2):
+    for i in range(2, len(pts), points_per_unit):
         i_vector = np.subtract(pts[i], pts[i - 1])
         new_pt = np.dot(i_vector, second_third) / (np.linalg.norm(i_vector) * np.linalg.norm(second_third))
         final_corr.append(new_pt)
     return final_corr
 
 
-def multi_corr_data(polymer_list, plot=True):
+def multi_corr_data(polymer_list, points_per_unit=2, plot=True):
     """
     Run tangent-tangent correlation analysis on polymer list.
     :param polymer_list: list, list of polymer chains
+    :param points_per_unit: int, points per polymer_unit
     :param plot: bool, plot log of tangent-tangent correlation functions if true
 
     :return: multi corr data as dictionary, {"x": [...], "y": [...]}
     """
-    cos_list = np.array([cos_vals(p) for p in tqdm(polymer_list)])
+    cos_list = np.array([cos_vals(p, points_per_unit=points_per_unit) for p in tqdm(polymer_list)])
     corr = np.mean(cos_list, axis=0)
     corr_data = {
         "x": list(range(0, len(corr))),
@@ -245,15 +251,17 @@ def multi_corr_data(polymer_list, plot=True):
     return corr_data
 
 
-def n_p(polymer_list, plot=True):
+def n_p(polymer_list, poly_obj=None, plot=True):
     """
     Run tangent-tangent correlation analysis on polymer list to get Np.
     :param polymer_list: list, list of polymer chains
+    :param poly_obj: obj, RotatePolymer object for rotation
     :param plot: bool, plot log of tangent-tangent correlation functions if true
 
     :return: Np, the persistence length measured in repeat units
     """
-    data = multi_corr_data(polymer_list, plot=plot)
+    points_per_unit = poly_obj.points_per_unit if poly_obj else 2
+    data = multi_corr_data(polymer_list, points_per_unit=points_per_unit, plot=plot)
     m, b = np.polyfit(x=data["x"], y=data["y"], deg=1)
     return -1 / m
 
@@ -282,22 +290,20 @@ if __name__ == "__main__":
     LCC = 1.480  # length of the inter-moiety bond
     DEFLECTION = 15  # degrees
 
-    polymer = PolymerRotate(ring_lengths=[LCSC, LCSC], bond_lengths=[LCC, LCC],
-                            deflection_angles=[DEFLECTION, -DEFLECTION, -DEFLECTION, DEFLECTION],
-                            dihed_energies=[DIHED_ROT, DIHED_ROT])
-    ch = polymer.std_chain(50)
-    new_ch = polymer.rotated_chain(50)
+    polymer = PolymerRotate(ring_lengths=[LCSC], bond_lengths=[LCC], deflection_angles=[DEFLECTION, DEFLECTION], dihed_energies=[DIHED_ROT], temp=700)
+    ch = polymer.std_chain(25)
+    new_ch = polymer.rotated_chain(25)
 
     draw_chain(ch, dim3=False)
     draw_chain(new_ch, dim3=True)
 
     # Generate 10,000 polymers
     start = timer()
-    polymers = multi_polymer(polymer, n=50, num_poly=100)
+    polymers = multi_polymer(polymer, n_units=50, num_poly=100)
     print("Generating ", len(polymers), "polymers with GPU:", timer() - start)
 
     # View results of tangent-tangent correlation function for polymers
-    Np = n_p(polymers, plot=False)
+    Np = n_p(polymers, poly_obj=polymer, plot=False)
     print("Np: ", Np)
 
     # Get mean square end-to-end distance for polymer with 25 units
