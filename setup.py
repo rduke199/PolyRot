@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 with open("requirements.txt", "r", encoding="utf-8") as f:
     requirements = f.read().splitlines()
-if sys.version_info.major <=3 and sys.version_info.minor <=8:
+if sys.version_info.major <= 3 and sys.version_info.minor <= 8:
     pass
 
 setuptools.setup(

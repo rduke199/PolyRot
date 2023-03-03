@@ -81,18 +81,15 @@ Next, we find the tangent-tangent correlation of the first ring with each subseq
 chain with any stiffness, the tangent-tangent correlation should be correlated (often linearly) with the 
 distance of a ring from the first ring. 
 We can view results of tangent-tangent correlation function by specifying `plot=Ture`. 
-The slope of the tangent-tangent correlation vs distance estimates the persistence length (N<sub>p</sub>). 
+The slope of the tangent-tangent correlation vs distance estimates the persistence length 
+(N<sub>p</sub>). Finally we can estimate the mean square end-to-end distance (R<sup>2</sup>) 
+for our polymer as shown below.
 ```python
 from PolyRot.chain_dimensions import n_p, avg_r_2
 
-Np = n_p(polymers_many, plot=True)
-print("Np: ", Np)
-```
+n_p_value = n_p(polymers_many, plot=True)
 
-Finally we can estimate the mean square end-to-end distance (R<sup>2</sup>) for our polymer as shown below. 
-```python
-r_2 = avg_r_2(polymers_many, in_nm_2=True)
-print("R^2: ", r_2)
+r_2_value = avg_r_2(polymers_many, in_nm_2=True)
 ```
 
 ### More complex polymers 

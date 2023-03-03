@@ -68,6 +68,8 @@ def ring_length(ring_size=None, ring_name=None):
         "pyrimidine": 2.71,
         "phenyl": 2.85,
         "pyridine": 2.78,
+        "fluorene": 6.95,
+        "benzothiadizole": 2.97,
     }
     ring_sizes = {
         5: 2.4,
@@ -92,6 +94,8 @@ def deflection_angle(ring_size=None, ring_name=None):
       "phenyl": 0,
       "pyrimidine": 1,
       "pyridine": 3,
+      "fluorene": 11,
+      "benzothiadizole": 1.4,
     }
     ring_sizes = {
         5: 18,
