@@ -47,7 +47,7 @@ from PolyRot.chain_dimensions import PolymerRotate
 
 polymer = PolymerRotate(ring_lengths=[L_RING,], 
                         bond_lengths=[L_BOND],
-                        deflection_angles=[ DEFLECTION,  DEFLECTION],
+                        deflection_angles=[DEFLECTION, DEFLECTION],
                         dihed_energies=[DIHED_ROT], 
                         temp=700)
 ```
