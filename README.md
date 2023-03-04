@@ -168,6 +168,15 @@ L_BOND = 1.480  # length of the inter-moiety bond
 DEFLECTION = 15  # degrees
 ```
 
+This module can also be used to access the average PES for a given PES class or subclass. Classes 
+must be in among the following: `central_peak`, `tilted`, `rolling_hill`, `w_shaped`, `small_peak`, 
+`high_peak`, `w_high`, `welled_tilted`, `w_small`, `non_welled_tilted`, `rolling_hill`. 
+```python
+from PolyRot.default_measurements import pes_by_class
+
+pes_by_class("w_high")
+```
+
 ## Central Dihedral 
 *In development*
 
