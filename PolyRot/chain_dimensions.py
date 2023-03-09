@@ -34,6 +34,12 @@ class PolymerRotate:
                 "Error. bond_lengths and ring_lengths should be the same length, and deflection_angles should be twice as long. len(bond_lengths)={}, len(ring_lengths={}, dihed_energies={}, and len(deflection_angles)={}".format(
                     len(ring_lengths), len(bond_lengths), len(dihed_energies), len(deflection_angles)))
 
+        for i, dihed in enumerate(dihed_energies):
+            if len(dihed or []) < 10:
+                raise ValueError(
+                    "Error. All dihedral PES should have at least 10 energy points. It is recommended that each have at least "
+                    "18 energy points. Inputted dihedral PES {} has only {} energy points".format(i, len(dihed or [])))
+
         self.bond_lengths = bond_lengths
         self.ring_lengths = ring_lengths
         self.deflection_angles = np.radians(deflection_angles) if theta_degrees else deflection_angles
@@ -251,18 +257,24 @@ def multi_corr_data(polymer_list, points_per_unit=2, plot=True):
     return corr_data
 
 
-def n_p(polymer_list, poly_obj=None, plot=True):
+def n_p(polymer_list, poly_obj=None, plot=True, return_r2=False):
     """
     Run tangent-tangent correlation analysis on polymer list to get Np.
     :param polymer_list: list, list of polymer chains
     :param poly_obj: obj, RotatePolymer object for rotation
     :param plot: bool, plot log of tangent-tangent correlation functions if true
+    :param return_r2: bool, return mean square end-to-end distance of persistence
+        length in nm^2 if True, else return persistence length in units
 
     :return: Np, the persistence length measured in repeat units
     """
     points_per_unit = poly_obj.points_per_unit if poly_obj else 2
     data = multi_corr_data(polymer_list, points_per_unit=points_per_unit, plot=plot)
     m, b = np.polyfit(x=data["x"], y=data["y"], deg=1)
+    if return_r2:
+        correlated_pts_idx = round(-1 / m) * points_per_unit + 1
+        correlated_pts = np.array(polymer_list)[:, :correlated_pts_idx, :]
+        return avg_r_2(correlated_pts, in_nm_2=True)
     return -1 / m
 
 
@@ -270,13 +282,13 @@ def avg_r_2(polymer_list, in_nm_2=False):
     """
     Compute average R^2 for a list of molecules
     :param polymer_list: list, list of polymer chains
-    :param in_nm_2: bool, return mean square end-to-end distance in nm^2 if True
+    :param in_nm_2: bool, return mean square end-to-end distance in nm^2 if True, else return in Angstroms^2
 
     :return: mean square end-to-end distance
     """
     all_r_2 = [(np.linalg.norm(np.array(polymer_list[i][-1]) - np.array(polymer_list[i][0]))) ** 2 for i, _ in
                enumerate(polymer_list)]
-    return np.mean(all_r_2) * 0.01 if in_nm_2 else np.mean(all_r_2) * 0.01
+    return np.mean(all_r_2) * 0.01 if in_nm_2 else np.mean(all_r_2)
 
 
 if __name__ == "__main__":

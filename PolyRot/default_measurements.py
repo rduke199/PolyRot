@@ -91,7 +91,7 @@ def deflection_angle(ring_size=None, ring_name=None):
     ring_names = {
       "thiazole": 13,
       "thiophene": 16,
-      "phenyl": 0,
+      "phenyl": 0.1,
       "pyrimidine": 1,
       "pyridine": 3,
       "fluorene": 11,

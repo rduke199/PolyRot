@@ -220,24 +220,29 @@ class MoleculeRot:
 
     @staticmethod
     def classify_curve(energy_dict, subcategories=False):
-        e0, e90, e180 = energy_dict.get(0), energy_dict.get(90), energy_dict.get(180)
+        e0, e90, e180, e40, e140 = energy_dict.get(0), energy_dict.get(90), energy_dict.get(180), energy_dict.get(
+            40), energy_dict.get(140)
         if None in [e0, e90, e180]:
             return None
-        elif max(energy_dict.values()) < 3:
+        elif max(energy_dict.values()) < 2:
             return 'rolling_hill'
-        elif e180 > e90 or e180 > e0:
+        elif e180 > e90 and e0 > e90:
             if subcategories:
-                if max([e180, e0]) > 2*e90:
+                if max([e180, e0]) > 2 * e90:
                     return 'w_high'
                 return 'w_small'
             return 'w_shaped'
-        elif abs(e0 - e180) < 1:
+        elif abs(e0 - e180) < 1 and abs(e40 - e140) < 1 and e0 < 1:
             if subcategories:
                 if max(energy_dict.values()) > 7:
                     return 'high_peak'
                 return 'small_peak'
             return 'central_peak'
         else:
+            if subcategories:
+                if e180 > e90 or e0 > e90:
+                    return 'welled_tilted'
+                return 'non_welled_tilted'
             return 'tilted'
 
     @property
@@ -475,7 +480,7 @@ class MoleculeRot:
     @property
     def poly_deflection_angles(self):
         r1_base, r2_base = self.rings[0].split("_")[1], self.rings[1].split("_")[1]
-        return [self.lm_deflection_angles[r2_base], self.lm_deflection_angles[r1_base], self.lm_deflection_angles[r1_base], self.lm_deflection_angles[r2_base]]
+        return [self.lm_deflection_angles[r2_base], self.lm_deflection_angles[r2_base], self.lm_deflection_angles[r1_base], self.lm_deflection_angles[r1_base]]
 
     @property
     def poly_dihed_energies(self):
@@ -562,7 +567,7 @@ class MoleculeRot:
         with open(filename, 'w') as f:
             json.dump(data, f, indent=2)
 
-    def write_nnff_json(self, json_out_dir):
+    def write_nnff_json(self, json_outdir):
         for angle in self.norm_energy_dict.keys():
             json_data = {
                 "molecule_name": self.name,
@@ -570,4 +575,4 @@ class MoleculeRot:
                 "smile": self.smiles,
                 "energy": self.norm_energy_dict[angle]
             }
-            self.write_json(json_data, "{}/{}_{}deg.json".format(json_out_dir, self.name, int(angle)))
+            self.write_json(json_data, "{}/{}_{}deg.json".format(json_outdir, self.name, int(angle)))
