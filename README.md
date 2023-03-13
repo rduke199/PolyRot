@@ -177,6 +177,29 @@ from PolyRot.default_measurements import pes_by_class
 pes_by_class("w_high")
 ```
 
+## PES Classification
+
+The central dihedral angle PES class can be estimated from SMILES using the trained classification 
+models via the `pes_classification` module. For example, one might get the estimated class for 
+bithiophene as follows: 
+
+```python
+from PolyRot.pes_classification import *
+
+predict_class("C1=CC=C(S1)C2=CC=C(S2)")
+```
+
+One might use the `pes_classification` module with the `default_measuements` module to estimate the 
+PES of a central dihedral angle from a SMILES string. 
+```python
+from PolyRot.pes_classification import *
+from PolyRot.default_measurements import *
+
+cls = predict_class("C1=CC=C(S1)C2=CC=C(S2)")
+pes = pes_by_class(cls)
+```
+
+
 ## Central Dihedral 
 *In development*
 
