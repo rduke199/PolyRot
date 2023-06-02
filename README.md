@@ -2,9 +2,8 @@
 This repo contains various tools for manipulating and rotating polymers. The tools fall into three 
 categories: 
 * `chain_dimensions`: a tools for analytically estimating chain dimensions using the dihedral potential 
-energy surfaces. 
-* `central_dihedral`: tools for finding and rotating the central dihedral angle of a polymer (adapted from
-https://doi.org/10.1021/ma500923r)
+energy surfaces. (adapted from https://doi.org/10.1021/ma500923r)
+* `central_dihedral`: tools for finding and rotating the central dihedral angle of a polymer 
 * `polymer_data`: a module for calculating polymer properties from a collection of master `json` files 
 
 # Installation 
