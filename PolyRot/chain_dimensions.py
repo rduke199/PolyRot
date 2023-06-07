@@ -113,7 +113,7 @@ class PolymerRotate:
             new_row = row.to_dict()
             if new_row['angle'] != 180:
                 new_row['angle'] = 360 - new_row['angle']
-                dihed_df = dihed_df.append(new_row, ignore_index=True)
+                dihed_df = pd.concat([dihed_df, new_row], ignore_index=True)
         dihed_df.sort_values(by="angle", inplace=True)
         dihed_df['boltzman'] = dihed_df.apply(lambda x: self.boltzman_dist(x.energy, T=self.temp), axis=1)
         dihed_df['probability'] = dihed_df.apply(lambda x: x.boltzman / dihed_df.boltzman.sum(), axis=1)
