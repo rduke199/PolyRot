@@ -15,6 +15,8 @@ pip install git+https://github.com/rduke199/PolyRot.git
 # Modules 
 ## Chain Dimensions
 
+This full demonstration of the Chain Dimensions module can be found in [this Colab notebook](https://colab.research.google.com/drive/1sazD-1XFgly2ri-Ng4ENGLu38eXb8nW6?usp=sharing)
+
 ### Generating polymers
 
 The first step in using this tool is collecting the necessary data. Consider the following polymer: 
@@ -75,6 +77,7 @@ draw_chain(new_ch, dim3=True)
 To estimate the chain dimensions for our polymer, we first generate 10,000 iterations of the randomly rotated
 polymer. 
 ```python
+from PolyRot.chain_dimensions import multi_polymer
 polymers_many = multi_polymer(polymer, n_units=25, num_poly=10000)
 ```
 
