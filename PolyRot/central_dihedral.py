@@ -1,119 +1,180 @@
-from monty.json import MSONable
-from monty.serialization import loadfn
-from pymatgen.core.structure import Molecule
-from pymatgen.io.gaussian import GaussianInput
+import pandas as pd
 
-from rdkit.Chem.rdmolops import AddHs
-from rdkit.Chem import MolFromSmiles, AllChem
-from rdkit.Chem.rdMolTransforms import SetDihedralDeg
+from rdkit import Chem
+from PolyRot.utils import *
+from rdkit.Chem import AllChem
+from rdkit.Chem import ChemicalForceFields, rdMolTransforms
+from rdkit.Chem.Draw import IPythonConsole
+
+IPythonConsole.ipython_3d = True
 
 
-def get_central_dihed(rdk_mol):
+class CentDihed:
     """
-    function for recording central dihedral atom numbers
+    Class to predict central dihedral PES
     """
-    # find all potential center bonds (single bonds between carbons)
-    potential_cntbond = []
-    for bond in rdk_mol.GetBonds():
-        if str(bond.GetBondType()) == 'SINGLE':
-            atom_a = bond.GetBeginAtom()
-            atom_b = bond.GetEndAtom()
-            bond_atoms = [atom_a, atom_b]
-            if atom_a.GetAtomicNum() == 6 and atom_b.GetAtomicNum() == 6:
-                potential_cntbond.append(bond_atoms)
 
-    # find central bond
-    num_cnt_bond = int((len(potential_cntbond) - 1) / 2)
-    cnt_bond = potential_cntbond[num_cnt_bond]
+    def __init__(self, smiles: str, num_confs: int = 5, max_iters: int = 5000, verbose: int = 1):
+        """
+        Initializes the CentDihedPred object.
 
-    cntatom_a = cnt_bond[0]
-    cntatom_b = cnt_bond[1]
-    dihed1 = []
-    dihed2 = []
+        :param smiles: str, SMILES string of the molecule.
+        :param num_confs: int, number of conformers to search.
+        :param max_iters: int, maximum number of iterations for optimization.
+        :param verbose: int, verbosity level for printing (default=1).
+        """
+        self.smiles = smiles  # Store the SMILES string
+        self.num_confs = num_confs  # Store the number of conformers to search
+        self.max_iters = max_iters  # Store the maximum iterations for optimization
+        self.verbose = verbose  # Store the verbosity level
 
-    # assemble list of atoms in first dihedral angle
-    for n in cntatom_a.GetNeighbors():
-        if n.GetIdx() != cntatom_b.GetIdx():
-            dihed1.append(n.GetIdx())
-            dihed1.extend((cntatom_a.GetIdx(), cntatom_b.GetIdx()))
-            break
-    for n in cntatom_b.GetNeighbors():
-        if n.GetIdx() != cntatom_a.GetIdx():
-            dihed1.append(n.GetIdx())
-            break
-    # assemble list of atoms in second dihedral angle
-    for n in cntatom_a.GetNeighbors():
-        dihed2.append(n.GetIdx()) if n.GetIdx() not in dihed1 else dihed1
-    dihed2.extend((cntatom_a.GetIdx(), cntatom_b.GetIdx()))
-    for n in cntatom_b.GetNeighbors():
-        dihed2.append(n.GetIdx()) if n.GetIdx() not in dihed1 else dihed1
+        # Create an RDKit molecule from the provided SMILES string
+        self.rdk_mol = Chem.AddHs(Chem.MolFromSmiles(smiles))
 
-    return [dihed1, dihed2]
+        # Find the conformer ID for the lowest energy conformer
+        self.best_conf_id = self.find_lowest_e_conf_id()
 
+        # Get the XYZ coordinates of the lowest energy conformer
+        self.best_structure = Chem.rdmolfiles.MolToXYZBlock(self.rdk_mol, confId=self.best_conf_id)
 
-def rotated_gaus_input(smiles, dihed_degree, paramset, out_file=None):
-    rdkmol = MolFromSmiles(smiles)
-    rdkmol_hs = AddHs(rdkmol)
+    @property
+    def central_dihed_idx(self):
+        """
+        Identifies atoms for central dihedral angle calculation.
+        """
+        # find all potential center bonds (single bonds between carbons)
+        potential_cnt_bond = []
+        for bond in self.rdk_mol.GetBonds():
+            if str(bond.GetBondType()) == 'SINGLE':
+                atom_a = bond.GetBeginAtom()
+                atom_b = bond.GetEndAtom()
+                bond_atoms = [atom_a, atom_b]
+                if atom_a.GetAtomicNum() == 6 and atom_b.GetAtomicNum() == 6:
+                    potential_cnt_bond.append(bond_atoms)
 
-    # Get dihedral angle atoms to be rotated and frozen
-    dihed_idxs = [i + 1 for i in get_central_dihed(rdkmol_hs)[0]]
+        # find central bond
+        num_cnt_bond = int((len(potential_cnt_bond) - 1) / 2)
+        cnt_bond = potential_cnt_bond[num_cnt_bond]
 
-    # Set dihedral angle
-    rotated_mol = SetDihedralDeg(rdkmol_hs.GetConformer(), dihed_idxs[0], dihed_idxs[1], dihed_idxs[2], dihed_idxs[3], dihed_degree)
+        cnt_atom_a = cnt_bond[0]
+        cnt_atom_b = cnt_bond[1]
+        dihed1 = []
+        dihed2 = []
 
-    # generate the input for gaussian energy run
-    structure = AllChem.rdmolfiles.MolToXYZBlock(rotated_mol)
-    mol = Molecule.from_str(structure, 'xyz')
-    paramset.route_parameters.update(
-        {"opt": "modredundant", 'SCF': '(MaxCycle=512)', 'Int': '(Grid=SuperFine)'})
-    gauss_inp = generate_gaussian_input(paramset=paramset, mol=mol)
-    out_file = out_file or "mol_rot_{:.2f}.log".format(dihed_degree)
-    gauss_inp.write_file(out_file, cart_coords=True)
+        # assemble list of atoms in first dihedral angle
+        for n in cnt_atom_a.GetNeighbors():
+            if n.GetIdx() != cnt_atom_b.GetIdx():
+                dihed1.append(n.GetIdx())
+                dihed1.extend((cnt_atom_a.GetIdx(), cnt_atom_b.GetIdx()))
+                break
+        for n in cnt_atom_b.GetNeighbors():
+            if n.GetIdx() != cnt_atom_a.GetIdx():
+                dihed1.append(n.GetIdx())
+                break
+        # assemble list of atoms in second dihedral angle
+        for n in cnt_atom_a.GetNeighbors():
+            dihed2.append(n.GetIdx()) if n.GetIdx() not in dihed1 else dihed1
+        dihed2.extend((cnt_atom_a.GetIdx(), cnt_atom_b.GetIdx()))
+        for n in cnt_atom_b.GetNeighbors():
+            dihed2.append(n.GetIdx()) if n.GetIdx() not in dihed1 else dihed1
 
-    # Freeze dihedral angle in com file
-    with open(out_file, 'r') as com:
-        lines = com.readlines()[:-2]
-    lines.append("D {} {} {} {} ={} B\n".format(dihed_idxs[0], dihed_idxs[1], dihed_idxs[2], dihed_idxs[3], dihed_degree))
-    lines.append("D {} {} {} {} F\n\n".format(dihed_idxs[0], dihed_idxs[1], dihed_idxs[2], dihed_idxs[3]))
-    with open(out_file, 'w') as com:
-        com.writelines(lines)
-    return out_file
+        return [dihed1, dihed2]
 
+    def dihed_rotator(self, degree: float, central_dihed_idx: int = 0) -> object:
+        """
+        Rotates a given dihedral angle to a specified degree.
 
-def generate_gaussian_input(paramset=None, mol=None, dieze_tag="#P"):
-    route_parameters = paramset.route_parameters
-    input_parameters = paramset.input_parameters
-    link0_parameters = paramset.link0_parameters
-    charge = paramset.charge
-    multiplicity = paramset.multiplicity
-    functional = paramset.functional
-    basis_set = paramset.basis_set
+        :param degree: float, target dihedral angle in degrees.
+        :param central_dihed_idx: int, index for central dihedral.
+        :return: XYZ coordinates after rotation.
+        """
+        rdMolTransforms.SetDihedralDeg(self.rdk_mol.GetConformer(), *self.central_dihed_idx[central_dihed_idx],
+                                       float(degree))
+        AllChem.EmbedMolecule(self.rdk_mol)
+        return AllChem.rdmolfiles.MolToXYZBlock(self.rdk_mol)
 
-    ginput = GaussianInput(mol=mol, charge=charge, spin_multiplicity=multiplicity,
-                           title=None, functional=functional, basis_set=basis_set, link0_parameters=link0_parameters,
-                           route_parameters=route_parameters, input_parameters=input_parameters, dieze_tag=dieze_tag)
-    return ginput
+    def find_lowest_e_conf_id(self):
+        """
+        Finds the lowest energy conformer ID for the molecule.
 
+        :return: int, ID of the lowest energy conformer.
+        """
+        print("Finding lowest energy conformer") if self.verbose > 1 else None
+        results = {}
+        AllChem.EmbedMultipleConfs(self.rdk_mol, numConfs=self.num_confs, params=AllChem.ETKDG())
+        results_MMFF = AllChem.MMFFOptimizeMoleculeConfs(self.rdk_mol, maxIters=self.max_iters)
+        for i, result in enumerate(results_MMFF):
+            results[i] = result[1]
+        best_idx = min(results, key=results.get)
+        return best_idx
 
-class GaussianParameters(MSONable):
-    def __init__(self, route_parameters=None, charge=None, multiplicity=None, basis_set=None,
-                 functional=None, input_parameters=None, link0_parameters=None):
-        self.route_parameters = route_parameters or {}
-        self.input_parameters = input_parameters or {}
-        self.link0_parameters = link0_parameters or {}
-        self.charge = charge or 0
-        self.multiplicity = multiplicity or 1
-        self.basis_set = basis_set
-        self.functional = functional
+    def find_torsion_conf(self, dihedral_angle: float, draw_structure: bool = False, central_dihed_idx: int = 0):
+        """
+        Finds the lowest energy conformer while holding specified dihedral angle.
 
+        :param dihedral_angle: float, target dihedral angle in degrees.
+        :param draw_structure: bool, whether to draw the lowest energy structure.
+        :param central_dihed_idx: int, index for central dihedral.
+        :return: XYZ coordinates of the optimized conformer.
+        """
 
-class GausParamSet(MSONable):
-    def __init__(self, name=None, **kwargs):
-        self.name = name or ""
-        for calc, params in kwargs.items():
-            exec("self.{} = sett(params, GaussianParameters())".format(calc))
+        dihed_idxs = self.central_dihed_idx[central_dihed_idx]
 
-    @staticmethod
-    def from_json(jsonfile):
-        d = loadfn(jsonfile)
-        return GausParamSet.from_dict(d)
+        # Set up constraints for dihedral angle
+        print("Setting dihedral") if self.verbose > 1 else None
+        conf = self.rdk_mol.GetConformer(self.best_conf_id)
+        rdMolTransforms.SetDihedralDeg(conf, *dihed_idxs, dihedral_angle)
+        mp = ChemicalForceFields.MMFFGetMoleculeProperties(self.rdk_mol)
+        ff = ChemicalForceFields.MMFFGetMoleculeForceField(self.rdk_mol, mp)
+        ff.MMFFAddTorsionConstraint(*dihed_idxs, False, dihedral_angle - 0.5, dihedral_angle + 0.5, 100.0)
+
+        # Optimize conformers
+        print("Optimizing") if self.verbose > 1 else None
+        r = ff.Minimize()
+        final_structure = Chem.rdmolfiles.MolToXYZBlock(self.rdk_mol, confId=self.best_conf_id)
+
+        # Check dihedral angle
+        print("Dihedral is: ", rdMolTransforms.GetDihedralDeg(conf, *dihed_idxs)) if self.verbose > 2 else None
+
+        # Draw
+        if draw_structure:
+            IPythonConsole.drawMol3D(self.rdk_mol, confId=self.best_conf_id)
+
+        return final_structure
+
+    def pred_pes_structures(self, min_angle: int = 0, max_angle: int = 180, angle_increment: int = 10):
+        """
+        Predicts potential energy surface structures for given dihedral angles.
+
+        :param min_angle: int, minimum dihedral angle in degrees (default=0).
+        :param max_angle: int, maximum dihedral angle in degrees (default=180).
+        :param angle_increment: int, increment value for dihedral angle (default=10).
+        :return: List of tuples containing dihedral angle and corresponding XYZ coordinates.
+        """
+        degrees = np.arange(min_angle, max_angle + 1, angle_increment).tolist()
+        return [(d, self.find_torsion_conf(dihedral_angle=d)) for d in degrees]
+
+    def pred_pes_energies(self, ani_model, device, structures: list = None, return_column: str = "pred_ani2x_energy_kcal_zero"):
+        """
+        Predicts potential energy surface energies for structures.
+
+        :param device: device used for torch (e.g., "cuda" or "cpu").
+        :param ani_model: PyTorch model for ANI prediction.
+        :param structures: list, list of tuples with dihedral angle and corresponding structure.
+        :param return_column: str, column name to return (default="pred_ani2x_energy_kcal_zero").
+        :return: List of predicted energies or DataFrame with energy data.
+        """
+
+        if not structures:
+            structures = self.pred_pes_structures()
+
+        energy_df = pd.DataFrame(structures, columns=["degrees", "pred_struc"])
+        energy_df.set_index("degrees", inplace=True)
+
+        energy_df["pred_molecule"] = energy_df["pred_struc"].apply(lambda x: ase_molecule(x))
+        energy_df["pred_ani2x_energy"] = energy_df["pred_molecule"].apply(lambda x: ani2x_energy(x, ani_model, device))
+        energy_df["pred_ani2x_energy_kcal"] = energy_df['pred_ani2x_energy'] * 627.5
+        energy_df["pred_ani2x_energy_kcal_zero"] = energy_df["pred_ani2x_energy_kcal"] - energy_df[
+            "pred_ani2x_energy_kcal"].min()
+        energy_df.index = energy_df.index.astype(float)
+        return energy_df[return_column].to_list() if return_column else energy_df
