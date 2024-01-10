@@ -23,25 +23,29 @@ class CentDihed:
         :param max_iters: int, maximum number of iterations for optimization.
         :param verbose: int, verbosity level for printing (default=1).
         """
+        self.verbose = verbose  # Store the verbosity level
         self.smiles = smiles  # Store the SMILES string
+        print(f"Initializing CentDihed for {smiles}") if self.verbose > 2 else None
         self.num_confs = num_confs  # Store the number of conformers to search
         self.max_iters = max_iters  # Store the maximum iterations for optimization
-        self.verbose = verbose  # Store the verbosity level
 
         # Create an RDKit molecule from the provided SMILES string
         self.rdk_mol = Chem.AddHs(Chem.MolFromSmiles(smiles))
 
-        # Find the conformer ID for the lowest energy conformer
-        self.best_conf_id = self.find_lowest_e_conf_id()
-
-        # Get the XYZ coordinates of the lowest energy conformer
-        self.best_structure = Chem.rdmolfiles.MolToXYZBlock(self.rdk_mol, confId=self.best_conf_id)
+    @property
+    def best_structure(self):
+        """
+        Return XYZ structure of conformer id with the lowest energy. May take time to run.
+        """
+        print("Getting best structure") if self.verbose > 2 else None
+        return Chem.rdmolfiles.MolToXYZBlock(self.rdk_mol, confId=self.best_conf_id)
 
     @property
     def central_dihed_idx(self):
         """
         Identifies atoms for central dihedral angle calculation.
         """
+        print("Finding central dihedral angle idx") if self.verbose > 2 else None
         # find all potential center bonds (single bonds between carbons)
         potential_cnt_bond = []
         for bond in self.rdk_mol.GetBonds():
@@ -88,14 +92,16 @@ class CentDihed:
         :param central_dihed_idx: int, index for central dihedral.
         :return: XYZ coordinates after rotation.
         """
+        print("Rotating dihedral") if self.verbose > 2 else None
         rdMolTransforms.SetDihedralDeg(self.rdk_mol.GetConformer(), *self.central_dihed_idx[central_dihed_idx],
                                        float(degree))
         AllChem.EmbedMolecule(self.rdk_mol)
         return AllChem.rdmolfiles.MolToXYZBlock(self.rdk_mol)
 
-    def find_lowest_e_conf_id(self):
+    @property
+    def best_conf_id(self):
         """
-        Finds the lowest energy conformer ID for the molecule.
+        Finds the lowest energy conformer ID for the molecule. MAY TAKES TIME TO RUN
 
         :return: int, ID of the lowest energy conformer.
         """
@@ -151,6 +157,7 @@ class CentDihed:
         :param angle_increment: int, increment value for dihedral angle (default=10).
         :return: List of tuples containing dihedral angle and corresponding XYZ coordinates.
         """
+        print("Predicting PES structures") if self.verbose > 2 else None
         degrees = np.arange(min_angle, max_angle + 1, angle_increment).tolist()
         return [(d, self.find_torsion_conf(dihedral_angle=d)) for d in degrees]
 
@@ -164,7 +171,7 @@ class CentDihed:
         :param return_column: str, column name to return (default="pred_ani2x_energy_kcal_zero").
         :return: List of predicted energies or DataFrame with energy data.
         """
-
+        print("Predicting PES energies") if self.verbose > 2 else None
         if not structures:
             structures = self.pred_pes_structures()
 

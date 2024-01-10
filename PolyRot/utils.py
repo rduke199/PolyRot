@@ -62,8 +62,8 @@ def aseatoms2ani(device, molecule):
     :param molecule: ASE atoms object.
     :return: Tuple of species and coordinates tensors.
     """
-    coordinates = torch.tensor([molecule.arrays["positions"]], requires_grad=True, device=device).float()
-    species = torch.tensor([molecule.arrays["numbers"]], dtype=torch.long, device=device)
+    coordinates = torch.tensor(np.array([molecule.arrays["positions"]]), requires_grad=True, device=device).float()
+    species = torch.tensor(np.array([molecule.arrays["numbers"]]), dtype=torch.long, device=device)
     return species, coordinates
 
 
