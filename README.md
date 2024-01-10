@@ -2,9 +2,8 @@
 This repo contains various tools for manipulating and rotating polymers. The tools fall into three 
 categories: 
 * `chain_dimensions`: a tools for analytically estimating chain dimensions using the dihedral potential 
-energy surfaces. 
-* `central_dihedral`: tools for finding and rotating the central dihedral angle of a polymer (adapted from
-https://doi.org/10.1021/ma500923r)
+energy surfaces. (adapted from https://doi.org/10.1021/ma500923r)
+* `central_dihedral`: tools for finding and rotating the central dihedral angle of a polymer 
 * `polymer_data`: a module for calculating polymer properties from a collection of master `json` files 
 
 # Installation 
@@ -15,6 +14,8 @@ pip install git+https://github.com/rduke199/PolyRot.git
 
 # Modules 
 ## Chain Dimensions
+
+This full demonstration of the Chain Dimensions module can be found in [this Colab notebook](https://colab.research.google.com/drive/1sazD-1XFgly2ri-Ng4ENGLu38eXb8nW6?usp=sharing)
 
 ### Generating polymers
 
@@ -76,6 +77,7 @@ draw_chain(new_ch, dim3=True)
 To estimate the chain dimensions for our polymer, we first generate 10,000 iterations of the randomly rotated
 polymer. 
 ```python
+from PolyRot.chain_dimensions import multi_polymer
 polymers_many = multi_polymer(polymer, n_units=25, num_poly=10000)
 ```
 
