@@ -203,8 +203,44 @@ pes = pes_by_class(cls)
 
 
 ## Central Dihedral 
-*In development*
+Use the CentDihed to find and manipulate the central dihedral of a small monomer unit, 
+rotate the central dihedral angle, find a low energy conformation with a given 
+dihedral angle using [RDKit MMFF force fields](https://doi.org/10.1186/s13321-014-0037-3), 
+and estimate the potential energy surface using the [TorchANI](https://aiqm.github.io/torchani/index.html)
+neural network. First, one crates a CentDihed object for a monomer. Here once can set 
+RDKit parameters like `num_confs` and `max_iters` for use when finding conformations. Then 
+one can use the class methods to manipulate teh dihedral angle. 
+```python
+from PolyRot.central_dihedral import CentDihed
+
+monomer = CentDihed(smiles="CCCC", num_confs=5)
+
+# Rotate central dihedral by 40 degrees
+monomer.dihed_rotator(40) 
+
+# Find a low energy conformer with the dihedral angle at 40 degrees
+monomer.find_torsion_conf(dihedral_angle=40)
+```
+
+The CentDihed class can also provide PES predictions using RDKit MMFF produced structures and the TorchANI neural network. 
+Note that these predictions have variable accuracies. 
+```python
+import torch 
+import torchani
+from PolyRot.central_dihedral import CentDihed
+
+# Setup TorchANI
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+ani_model = torchani.models.ANI2x(periodic_table_index=True).to(device)
+
+# Produce PES prediction
+monomer = CentDihed(smiles="CCCC", num_confs=5)
+monomer.pred_pes_energies(device=device, ani_model=ani_model)
+```
 
 
-## Polymer Data
-*In development*
+
+
+
+
+

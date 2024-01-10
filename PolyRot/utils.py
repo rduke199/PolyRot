@@ -1,4 +1,5 @@
-import numpy as np
+import torch
+from pymatgen.io.ase import *
 import matplotlib.pyplot as plt
 
 
@@ -49,3 +50,41 @@ def get_dihedral(a, b, c, d):
     x = np.dot(v, w)
     y = np.dot(np.cross(b1, v), w)
     return np.degrees(np.arctan2(y, x))
+
+
+# TORCHANI FUNCTIONS
+
+def aseatoms2ani(device, molecule):
+    """
+    Converts ASE atoms to ANI format tensors.
+
+    :param device: str, device used for torch (e.g., "cuda" or "cpu").
+    :param molecule: ASE atoms object.
+    :return: Tuple of species and coordinates tensors.
+    """
+    coordinates = torch.tensor([molecule.arrays["positions"]], requires_grad=True, device=device).float()
+    species = torch.tensor([molecule.arrays["numbers"]], dtype=torch.long, device=device)
+    return species, coordinates
+
+
+def ani2x_energy(ase_atoms, ani_model, device):
+    """
+    Computes ANI2x energy from input.
+
+    :param ani_model: PyTorch model for ANI prediction.
+    :param ase_atoms: ASE atoms object.
+    :param device: str, device used for torch (e.g., "cuda" or "cpu").
+    :return: ANI2x energy value.
+    """
+    return ani_model(aseatoms2ani(device, ase_atoms)).energies.item()
+
+
+def ase_molecule(xyz_coord: str):
+    """
+    Creates ASE atoms from XYZ coordinates string.
+
+    :param xyz_coord: str, XYZ coordinates.
+    :return: ASE atoms object.
+    """
+    molecule = Molecule.from_str(xyz_coord, fmt="xyz")
+    return AseAtomsAdaptor().get_atoms(molecule)
