@@ -1,10 +1,13 @@
+import os
 import pandas as pd
+from PolyRot.utils import *
+from sklearn.preprocessing import LabelEncoder
+from tensorflow.keras.models import load_model
 
 from rdkit import Chem
-from PolyRot.utils import *
 from rdkit.Chem import AllChem
-from rdkit.Chem import ChemicalForceFields, rdMolTransforms
 from rdkit.Chem.Draw import IPythonConsole
+from rdkit.Chem import ChemicalForceFields, rdMolTransforms
 
 IPythonConsole.ipython_3d = True
 
@@ -188,3 +191,44 @@ class CentDihed:
             "pred_ani2x_energy_kcal"].min()
         energy_df.index = energy_df.index.astype(float)
         return energy_df[return_column].to_list() if return_column else energy_df
+
+    def predict_class(self):
+        """
+        Use classification models to predict PES class from monomer SMILES string.
+
+        :return: str, curve class
+        """
+        # Set up model and label encoder
+        poly_rot = os.path.dirname(os.path.realpath(__file__))
+        imported_model = load_model(os.path.join(poly_rot, 'classification_models', 'curve_class_model-0.3-30'))
+        encoder = LabelEncoder()
+        encoder.classes_ = np.load(os.path.join(poly_rot, 'classification_models', 'curve_class_transform.npy'),
+                                   allow_pickle=True)
+
+        # Perform prediction
+        fingerprint = np.array(AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(self.smiles), radius=2))
+        predictions = imported_model.predict(np.array([fingerprint], ))
+        results = encoder.inverse_transform([np.argmax(predictions)])
+
+        return results[0]
+
+    def predict_subclass(self):
+        """
+        Use classification models to predict PES subclass from monomer SMILES string.
+
+        :return: str, curve subclass
+        """
+        # Set up model and label encoder
+        poly_rot = os.path.dirname(os.path.realpath(__file__))
+        imported_model = load_model(os.path.join(poly_rot, 'classification_models', 'curve_subclass_model-0.3-30'))
+        encoder = LabelEncoder()
+        encoder.classes_ = np.load(os.path.join(poly_rot, 'classification_models', 'curve_subclass_transform.npy'),
+                                   allow_pickle=True)
+
+        # Perform prediction
+        fingerprint = np.array(AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(self.smiles), radius=2))
+        predictions = imported_model.predict(np.array([fingerprint], ))
+        results = encoder.inverse_transform([np.argmax(predictions)])
+
+        return results[0]
+

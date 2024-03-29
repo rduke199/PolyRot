@@ -3,6 +3,47 @@ from pymatgen.io.ase import *
 import matplotlib.pyplot as plt
 
 
+def classify_pes(energy_dict, subcategories=False):
+    """
+    Classifies a PES based on the energy values.
+    :param energy_dict: dict, dictionary containing pes information, {<dihedral rotation angle (degrees)>: <energy (kcal/mol)>}
+        The energy dictionary should contain at least 10 energy points (though it is recommended that it contain at
+        least 18). The dihedral rotation angles (dict keys) should include 0, 40, 90, 140, and 180.
+    :param subcategories: bool, return subcategory classification if True, class classification if False
+
+    :return: str, curve classification
+    """
+    if len(energy_dict.keys() or []) < 10:
+        raise ValueError(
+            "Error. All dihedral PES should have at least 10 energy points. It is recommended that each have at least "
+            "18 energy points. Inputted dihedral PES has only {} energy points".format(len(energy_dict.keys() or [])))
+
+    e0, e90, e180, e40, e140 = energy_dict.get(0), energy_dict.get(90), energy_dict.get(180), energy_dict.get(
+        40), energy_dict.get(140)
+    if None in [e0, e90, e180, e40, e140]:
+        return None
+    elif max(energy_dict.values()) < 2:
+        return 'rolling_hill'
+    elif e180 > e90 and e0 > e90:
+        if subcategories:
+            if max([e180, e0]) > 2 * e90:
+                return 'w_high'
+            return 'w_small'
+        return 'w_shaped'
+    elif abs(e0 - e180) < 1 and abs(e40 - e140) < 1 and e0 < 1:
+        if subcategories:
+            if max(energy_dict.values()) > 7:
+                return 'high_peak'
+            return 'small_peak'
+        return 'central_peak'
+    else:
+        if subcategories:
+            if e180 > e90 or e0 > e90:
+                return 'welled_tilted'
+            return 'non_welled_tilted'
+        return 'tilted'
+
+
 def draw_chain(pts, dim3=False, figsize=(50, 50)):
     """
     Plot polymer chain

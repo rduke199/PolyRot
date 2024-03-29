@@ -1,10 +1,10 @@
 # ![](media/PolyRot_logo.png)
-This repo contains various tools for manipulating and rotating polymers. The tools fall into three 
+This repo contains various tools for manipulating and rotating polymers. The tools fall into two 
 modules: 
 * `chain_dimensions`: a tools for analytically estimating chain dimensions using the dihedral potential 
 energy surfaces (adapted from https://doi.org/10.1021/ma500923r)
-* `pes_classification`: a module estimating a potential energy surface (PES) from a SMILES string using the trained classification models (adapted from https://doi.org/10.1021/ma500923r)
-* `central_dihedral`: tools for finding and rotating the central dihedral angle of a polymer 
+* `central_dihedral`: tools for finding and rotating the central dihedral angle of a polymer. It also includes some 
+beta tools for predicting the potential energy surface (PES) of the central dihedral angle (adapted from https://doi.org/10.1021/ma500923r). 
 
 # Installation 
 This module can be installed with `pip install` by running the following code:
@@ -179,28 +179,6 @@ from PolyRot.default_measurements import pes_by_class
 pes_by_class("w_high")
 ```
 
-## PES Classification
-
-The central dihedral angle PES class can be estimated from SMILES using the trained classification 
-models via the `pes_classification` module. For example, one might get the estimated class for 
-bithiophene as follows: 
-
-```python
-from PolyRot.pes_classification import *
-
-predict_class("C1=CC=C(S1)C2=CC=C(S2)")
-```
-
-One might use the `pes_classification` module with the `default_measuements` module to estimate the 
-PES of a central dihedral angle from a SMILES string. 
-```python
-from PolyRot.pes_classification import *
-from PolyRot.default_measurements import *
-
-cls = predict_class("C1=CC=C(S1)C2=CC=C(S2)")
-pes = pes_by_class(cls)
-```
-
 
 ## Central Dihedral 
 Use the CentDihed to find and manipulate the central dihedral of a small monomer unit, 
@@ -222,8 +200,31 @@ monomer.dihed_rotator(40)
 monomer.find_torsion_conf(dihedral_angle=40)
 ```
 
+
+The central dihedral angle PES class can be estimated from SMILES using the trained classification 
+models via the `pes_classification` module. For example, one might get the estimated class for 
+bithiophene as follows: 
+
+```python
+from PolyRot.central_dihedral import CentDihed
+
+CentDihed(smiles="C1=CC=C(S1)C2=CC=C(S2)").predict_class()
+# >>> 
+```
+
+One might use the `pes_classification` module with the `default_measuements` module to estimate the 
+PES of a central dihedral angle from a SMILES string. 
+```python
+from PolyRot.central_dihedral import CentDihed
+from PolyRot.default_measurements import pes_by_class
+
+cls = CentDihed(smiles="C1=CC=C(S1)C2=CC=C(S2)").predict_class()
+pes_by_class(cls)
+# >>> 
+```
+
 The CentDihed class can also provide PES predictions using RDKit MMFF produced structures and the TorchANI neural network. 
-Note that these predictions have variable accuracies. 
+Note that these predictions **are not always accurate!** 
 ```python
 import torch 
 import torchani
@@ -236,6 +237,7 @@ ani_model = torchani.models.ANI2x(periodic_table_index=True).to(device)
 # Produce PES prediction
 monomer = CentDihed(smiles="CCCC", num_confs=5)
 monomer.pred_pes_energies(device=device, ani_model=ani_model)
+# >>> 
 ```
 
 
