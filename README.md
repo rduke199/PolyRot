@@ -1,10 +1,10 @@
 # ![](media/PolyRot_logo.png)
 This repo contains various tools for manipulating and rotating polymers. The tools fall into three 
-categories: 
+modules: 
 * `chain_dimensions`: a tools for analytically estimating chain dimensions using the dihedral potential 
 energy surfaces. (adapted from https://doi.org/10.1021/ma500923r)
-* `central_dihedral`: tools for finding and rotating the central dihedral angle of a polymer 
-* `polymer_data`: a module for calculating polymer properties from a collection of master `json` files 
+* `pes_classification`: tools for finding and rotating the central dihedral angle of a polymer 
+* `polymer_data`: a module estimating a potential energy surface (PES) from a SMILES string using the trained classification models
 
 # Installation 
 This module can be installed with `pip install` by running the following code:
@@ -149,7 +149,7 @@ polymer = PolymerRotate(bond_lengths=[LB_FT, LB_FT, LB_TB, LB_TB],
 
 Although it is recommended that users find exact chemical measurements via calculations or
 literature review, users can find estimated measurements via the `default_measuements` module. 
-For example, one might find the `PolymerRotate` parameters for example 1 as follows: 
+For example, one might find the `PolymerRotate` parameters for Example 1 as follows: 
 
 ```python
 from PolyRot.default_measurements import *
