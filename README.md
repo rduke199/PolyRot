@@ -1,4 +1,4 @@
-# ![](PolyRot_logo.png)
+# ![](media/PolyRot_logo.png)
 This repo contains various tools for manipulating and rotating polymers. The tools fall into three 
 categories: 
 * `chain_dimensions`: a tools for analytically estimating chain dimensions using the dihedral potential 
