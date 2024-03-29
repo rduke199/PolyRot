@@ -31,6 +31,7 @@ class CentDihed:
 
         # Create an RDKit molecule from the provided SMILES string
         self.rdk_mol = Chem.AddHs(Chem.MolFromSmiles(smiles))
+        self.best_conf_id = None
 
     @property
     def best_structure(self):
@@ -38,6 +39,7 @@ class CentDihed:
         Return XYZ structure of conformer id with the lowest energy. May take time to run.
         """
         print("Getting best structure") if self.verbose > 2 else None
+        self.best_conf_id = self.best_conf_id or self.get_best_conf_id()
         return Chem.rdmolfiles.MolToXYZBlock(self.rdk_mol, confId=self.best_conf_id)
 
     @property
@@ -98,8 +100,7 @@ class CentDihed:
         AllChem.EmbedMolecule(self.rdk_mol)
         return AllChem.rdmolfiles.MolToXYZBlock(self.rdk_mol)
 
-    @property
-    def best_conf_id(self):
+    def get_best_conf_id(self):
         """
         Finds the lowest energy conformer ID for the molecule. MAY TAKES TIME TO RUN
 
@@ -125,11 +126,13 @@ class CentDihed:
         """
 
         dihed_idxs = self.central_dihed_idx[central_dihed_idx]
+        self.best_conf_id = self.best_conf_id or self.get_best_conf_id()
 
         # Set up constraints for dihedral angle
         print("Setting dihedral") if self.verbose > 1 else None
         conf = self.rdk_mol.GetConformer(self.best_conf_id)
         rdMolTransforms.SetDihedralDeg(conf, *dihed_idxs, dihedral_angle)
+        print("Pre-minimization dihedral is: ", rdMolTransforms.GetDihedralDeg(conf, *dihed_idxs)) if self.verbose > 2 else None
         mp = ChemicalForceFields.MMFFGetMoleculeProperties(self.rdk_mol)
         ff = ChemicalForceFields.MMFFGetMoleculeForceField(self.rdk_mol, mp)
         ff.MMFFAddTorsionConstraint(*dihed_idxs, False, dihedral_angle - 0.5, dihedral_angle + 0.5, 100.0)
@@ -140,7 +143,7 @@ class CentDihed:
         final_structure = Chem.rdmolfiles.MolToXYZBlock(self.rdk_mol, confId=self.best_conf_id)
 
         # Check dihedral angle
-        print("Dihedral is: ", rdMolTransforms.GetDihedralDeg(conf, *dihed_idxs)) if self.verbose > 2 else None
+        print("Dihedral is: ", rdMolTransforms.GetDihedralDeg(conf, *dihed_idxs)) if self.verbose > 1 else None
 
         # Draw
         if draw_structure:

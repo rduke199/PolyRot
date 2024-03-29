@@ -2,5 +2,6 @@
 .idea
 .empty
 **__pycache__
+scratch/
 env_poly_rot/
 PolyRot.egg-info/
