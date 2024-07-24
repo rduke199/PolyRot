@@ -3,7 +3,7 @@ This repo contains various tools for manipulating and rotating polymers. The too
 modules: 
 * `chain_dimensions`: a tools for analytically estimating chain dimensions using the dihedral potential 
 energy surfaces (adapted from https://doi.org/10.1021/ma500923r)
-* `pes_classification`: a module estimating a potential energy surface (PES) from a SMILES string using the trained classification models (adapted from https://doi.org/10.1021/ma500923r)
+* `pes_classification`: a module estimating a potential energy surface (PES) from a SMILES string using the trained classification models (adapted from https://doi.org/10.1021/acs.macromol.3c00824)
 * `central_dihedral`: tools for finding and rotating the central dihedral angle of a polymer 
 
 # Installation 
