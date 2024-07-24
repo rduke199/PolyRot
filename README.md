@@ -15,7 +15,7 @@ pip install git+https://github.com/rduke199/PolyRot.git
 # Modules 
 ## Chain Dimensions
 
-This full demonstration of the Chain Dimensions module can be found in [this Colab notebook](https://colab.research.google.com/drive/1sazD-1XFgly2ri-Ng4ENGLu38eXb8nW6?usp=sharing)
+This full demonstration of the Chain Dimensions module can be found in a Colab Notebook: [![Colab Notebook](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1sazD-1XFgly2ri-Ng4ENGLu38eXb8nW6?usp=sharing)
 
 ### Generating polymers
 
