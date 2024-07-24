@@ -200,7 +200,7 @@ class PolymerRotate:
 
 # ---------------------- Analysis ----------------------
 
-@jit(target_backend='cuda')
+# @jit(target_backend='cuda')  <-- DEPRECIATED!
 def multi_polymer(poly_obj, n_units, num_poly):
     """
     Generate list of rotated polymers
