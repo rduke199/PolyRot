@@ -1,8 +1,8 @@
 import os
 import pandas as pd
 from PolyRot.utils import *
-from sklearn.preprocessing import LabelEncoder
-from tensorflow.keras.models import load_model
+from PolyRot.chain_dimensions import PolymerRotate
+from PolyRot.pes_classification import predict_class, predict_subclass
 
 from rdkit import Chem
 from rdkit.Chem import AllChem
@@ -198,19 +198,7 @@ class CentDihed:
 
         :return: str, curve class
         """
-        # Set up model and label encoder
-        poly_rot = os.path.dirname(os.path.realpath(__file__))
-        imported_model = load_model(os.path.join(poly_rot, 'classification_models', 'curve_class_model-0.3-30'))
-        encoder = LabelEncoder()
-        encoder.classes_ = np.load(os.path.join(poly_rot, 'classification_models', 'curve_class_transform.npy'),
-                                   allow_pickle=True)
-
-        # Perform prediction
-        fingerprint = np.array(AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(self.smiles), radius=2))
-        predictions = imported_model.predict(np.array([fingerprint], ))
-        results = encoder.inverse_transform([np.argmax(predictions)])
-
-        return results[0]
+        return predict_class(self.smiles)
 
     def predict_subclass(self):
         """
@@ -219,16 +207,4 @@ class CentDihed:
         :return: str, curve subclass
         """
         # Set up model and label encoder
-        poly_rot = os.path.dirname(os.path.realpath(__file__))
-        imported_model = load_model(os.path.join(poly_rot, 'classification_models', 'curve_subclass_model-0.3-30'))
-        encoder = LabelEncoder()
-        encoder.classes_ = np.load(os.path.join(poly_rot, 'classification_models', 'curve_subclass_transform.npy'),
-                                   allow_pickle=True)
-
-        # Perform prediction
-        fingerprint = np.array(AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(self.smiles), radius=2))
-        predictions = imported_model.predict(np.array([fingerprint], ))
-        results = encoder.inverse_transform([np.argmax(predictions)])
-
-        return results[0]
-
+        return predict_subclass(self.smiles)
