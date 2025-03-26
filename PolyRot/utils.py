@@ -3,29 +3,50 @@ from pymatgen.io.ase import *
 import matplotlib.pyplot as plt
 
 
-def draw_chain(pts, dim3=False, figsize=(50, 50)):
+def draw_chain(pts, dim3=False, interactive=False, figsize=(50, 50)):
     """
-    Plot polymer chain
+    Plot polymer chain.
         :param pts: list, list of [x,y,z] points for the chain
         :param dim3: bool, plot in 3 dimensions if True
-        :param figsize: list,
-
+        :param interactive: bool, plot interactively if True
+        :param figsize: tuple, figure size for matplotlib
     """
     x, y, z = list(zip(*pts))
-    if dim3:
-        ax = plt.figure().add_subplot(projection='3d')
-        ax.set_ylim(-15, 15)
-        ax.set_zlim(-15, 15)
-        ax.plot(z, y, x)
-        ax.scatter(z, y, x)
-        ax.view_init(elev=20., azim=-75)
+    
+    if interactive:
+        if dim3:
+            fig = go.Figure()
+            fig.add_trace(go.Scatter3d(x=z, y=y, z=x, mode='lines+markers'))
+            fig.update_layout(scene=dict(
+                xaxis=dict(visible=False),
+                yaxis=dict(visible=False),
+                zaxis=dict(visible=False),
+                aspectmode='cube'
+            ))
+        else:
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=z, y=x, mode='lines+markers'))
+            fig.update_layout(
+                xaxis=dict(visible=False),
+                yaxis=dict(visible=False),
+                autosize=True
+            )
+        return fig
     else:
-        fig, ax = plt.subplots(figsize=figsize)
-        ax.set_ylim(round(min(x)) - 2, round(max(x)) + 2)
-        ax.plot(z, x)
-        ax.scatter(z, x)
-        ax.set_aspect('equal', adjustable='box')
-    return ax
+        if dim3:
+            ax = plt.figure().add_subplot(projection='3d')
+            ax.set_ylim(-15, 15)
+            ax.set_zlim(-15, 15)
+            ax.plot(z, y, x)
+            ax.scatter(z, y, x)
+            ax.view_init(elev=20., azim=-75)
+        else:
+            fig, ax = plt.subplots(figsize=figsize)
+            ax.set_ylim(round(min(x)) - 2, round(max(x)) + 2)
+            ax.plot(z, x)
+            ax.scatter(z, x)
+            ax.set_aspect('equal', adjustable='box')
+        return ax
 
 
 def get_dist_btw_points(pts):
